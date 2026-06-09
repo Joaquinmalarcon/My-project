@@ -159,6 +159,25 @@ namespace Immersal.Samples.Navigation
             m_NavigationTarget = button.targetObject.GetComponent<IsNavigationTarget>();
             TryToFindPath(m_NavigationTarget);
         }
+        
+        public void NavigateToName(string name)
+        {
+            IsNavigationTarget[] all = FindObjectsByType<IsNavigationTarget>(FindObjectsSortMode.None);
+            foreach (var t in all)
+            {
+                if (string.Equals(t.targetName, name, System.StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(t.gameObject.name, name, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    m_targetTransform = t.transform;
+                    m_NavigationTarget = t;
+                    m_navigationState = NavigationState.Navigating;
+                    TryToFindPath(t);
+                    return;
+                }
+            }
+            Debug.LogWarning($"[Nav] No se encontró target: {name}");
+        }
+        
 
         public void TryToFindPath(IsNavigationTarget navigationTarget)
         {
@@ -234,6 +253,16 @@ namespace Immersal.Samples.Navigation
         {
             NavMeshPath path = new NavMeshPath();
             List<Vector3> collapsedCorners = new List<Vector3>();
+
+            // --- SEGURO ANTI-DESFASE AR (MODIFICADO A 20M) ---
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(startPosition, out hit, 20.0f, NavMesh.AllAreas)) {
+                startPosition = hit.position;
+            }
+            if (NavMesh.SamplePosition(targetPosition, out hit, 20.0f, NavMesh.AllAreas)) {
+                targetPosition = hit.position;
+            }
+            // -------------------------------------------------
 
             if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path))
             {
